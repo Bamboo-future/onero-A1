@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+datasets/
+.cache/
+nohup.out
+*.mp4
+*.parquet
+trash_unused_*/

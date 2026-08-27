@@ -1,0 +1,57 @@
+diff --git a/src/lerobot/robots/__init__.py b/src/lerobot/robots/__init__.py
+index eb8b06fb..a128d4e9 100644
+--- a/src/lerobot/robots/__init__.py
++++ b/src/lerobot/robots/__init__.py
+@@ -19,3 +19,12 @@ from .robot import Robot
+ from .utils import make_robot_from_config
+ 
+ __all__ = ["Robot", "RobotConfig", "make_robot_from_config"]
++
++# Import OneroA1 to register its config subclass
++# This needs to be after __all__ to avoid circular imports
++import importlib
++
++try:
++    importlib.import_module("lerobot.robots.onero_a1")
++except ImportError:
++    pass  # Optional dependency
+diff --git a/src/lerobot/scripts/lerobot_record.py b/src/lerobot/scripts/lerobot_record.py
+index 532a8c60..ecf75cea 100644
+--- a/src/lerobot/scripts/lerobot_record.py
++++ b/src/lerobot/scripts/lerobot_record.py
+@@ -126,6 +126,7 @@ from lerobot.robots import (  # noqa: F401
+     koch_follower,
+     make_robot_from_config,
+     omx_follower,
++    onero_a1,
+     openarm_follower,
+     reachy2,
+     rebot_b601_follower,
+@@ -143,6 +144,7 @@ from lerobot.teleoperators import (  # noqa: F401
+     koch_leader,
+     make_teleoperator_from_config,
+     omx_leader,
++    onero_a1_leader,
+     openarm_leader,
+     openarm_mini,
+     reachy2_teleoperator,
+diff --git a/src/lerobot/scripts/lerobot_teleoperate.py b/src/lerobot/scripts/lerobot_teleoperate.py
+index 30f13987..c770ffde 100644
+--- a/src/lerobot/scripts/lerobot_teleoperate.py
++++ b/src/lerobot/scripts/lerobot_teleoperate.py
+@@ -95,6 +95,7 @@ from lerobot.robots import (  # noqa: F401
+     koch_follower,
+     make_robot_from_config,
+     omx_follower,
++    onero_a1,
+     openarm_follower,
+     reachy2,
+     rebot_b601_follower,
+@@ -114,6 +115,7 @@ from lerobot.teleoperators import (  # noqa: F401
+     koch_leader,
+     make_teleoperator_from_config,
+     omx_leader,
++    onero_a1_leader,
+     openarm_leader,
+     openarm_mini,
+     reachy2_teleoperator,
