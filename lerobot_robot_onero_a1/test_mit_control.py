@@ -28,13 +28,13 @@ def test_mit_control():
     # 配置
     config = OneroA1Config(
         master_arm_config=OneroA1SingleArmConfig(
-            port="/dev/ttyACM0",
+            port="/dev/serial/by-id/usb-Openlight_Labs_CANable2_b158aa7_github.com_normaldotcom_canable2.git_207936AC4343-if00",
             robot_model="a1_r",
             enable_safety=True,
             max_delta_rad=0.5,  # 每步最大关节变化
         ),
         slave_arm_config=OneroA1SingleArmConfig(
-            port="/dev/ttyACM1",
+            port="/dev/serial/by-id/usb-Openlight_Labs_CANable2_b158aa7_github.com_normaldotcom_canable2.git_209636A54343-if00",
             robot_model="a1_l",
             enable_safety=True,
             max_delta_rad=0.5,
@@ -93,7 +93,7 @@ def test_single_arm_mit():
 
     # 测试单臂MIT控制
     config = OneroA1SingleArmConfig(
-        port="/dev/ttyACM0",
+        port="/dev/serial/by-id/usb-Openlight_Labs_CANable2_b158aa7_github.com_normaldotcom_canable2.git_209636A54343-if00",
         robot_model="a1_l",
     )
 

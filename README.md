@@ -82,3 +82,15 @@ python disable_both_motors.py
 ## 许可证
 
 部分代码源自 LeRobot（Apache-2.0），相关文件保留原版权头。`oneroarm` 为 OneRobotics 专有库，不在本仓库内。
+
+## 部署（模型推理）
+
+训练好的模型部署到从臂自主执行，推理可在另一台 GPU 电脑完成。详见 [deployment/README.md](deployment/README.md)。
+
+```bash
+# B 电脑：启动推理服务
+python deployment/infer_server.py
+
+# A 电脑：启动部署循环（需机械臂+双摄，灯光/场景与录制一致）
+micromamba run -n onero_lerobot python deployment/run_inference.py
+```

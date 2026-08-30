@@ -33,6 +33,7 @@ import argparse
 import os
 import json
 import shlex
+import re
 import subprocess
 import sys
 
@@ -112,6 +113,8 @@ def main() -> int:
                         help="录制帧率（双摄实测最高稳定 15fps）")
     parser.add_argument("--root", default=None,
                         help="数据集保存根目录（默认 $HF_LEROBOT_HOME/数据集名）")
+    parser.add_argument("--resume", action="store_true",
+                        help="续录到现有数据集（需配合 --root 指定已有数据集目录，并加 --no-stamp）")
     parser.add_argument("--master_port", default=DEFAULT_MASTER_PORT, help="主臂串口")
     parser.add_argument("--slave_port", default=DEFAULT_SLAVE_PORT, help="从臂串口")
     parser.add_argument("--master_model", default="a1_r", help="主臂型号")
@@ -136,7 +139,14 @@ def main() -> int:
                         help="只打印将执行的命令，不真正录制")
     args = parser.parse_args()
 
-    if args.root and os.path.isdir(os.path.expanduser(args.root)):
+    if args.resume:
+        if not args.root or not os.path.isdir(os.path.expanduser(args.root)):
+            print(f"[错误] 续录(--resume)要求 --root 指向已存在的数据集目录，当前: {args.root}")
+            return 1
+        if not args.no_stamp:
+            print("[错误] 续录(--resume)时必须加 --no-stamp，保持 repo_id 与数据集一致")
+            return 1
+    elif args.root and os.path.isdir(os.path.expanduser(args.root)):
         print(f"[错误] --root 目录已存在：{args.root}")
         print("这个版本的 LeRobot 把 --root 当作数据集目录本身，且要求该目录必须不存在（不会复用或覆盖）。")
         print("请换一个新的目录路径重新运行；如果旧目录是录制中途崩溃留下的残缺数据，")
@@ -182,6 +192,8 @@ def main() -> int:
     ]
     if args.root:
         cmd.append(f"--dataset.root={args.root}")
+    if args.resume:
+        cmd.append("--resume=true")
     if args.no_stamp:
         cmd.append("--dataset.no_stamp=true")
     if args.no_push:
@@ -202,11 +214,53 @@ def main() -> int:
     if args.dry_run:
         return 0
 
-    try:
-        subprocess.run(cmd, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"[错误] 录制失败，退出码 {e.returncode}")
-        return e.returncode
+    total = args.num_episodes
+    print()
+    print("=" * 70)
+    print(f"  ▶ 录制开始：共 {total} 回合，每回合 {args.episode_time_s:.0f} 秒")
+    print(f"  ▶ 回合间复位 {args.reset_time_s:.0f} 秒（不录数据）")
+    print("  ▶ 快捷键：n=下一回合  r=重录当前回合  q=退出")
+    print("=" * 70)
+
+    def banner(text):
+        print("\n" + "=" * 70)
+        print("  " + text)
+        print("=" * 70, flush=True)
+
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    buf = b""
+    last_marker = ""
+
+    while True:
+        chunk = proc.stdout.read(4096)
+        if not chunk:
+            break
+        sys.stdout.buffer.write(chunk)
+        sys.stdout.buffer.flush()
+        buf += chunk
+        while b"\n" in buf:
+            line, buf = buf.split(b"\n", 1)
+            text = line.decode(errors="replace")
+            m = re.search(r"Recording episode (\d+)", text)
+            if m:
+                n = int(m.group(1)) + 1
+                banner(f"▶▶▶ 第 {n}/{total} 回合开始！现在拖动主臂执行任务")
+                last_marker = "rec"
+            elif "Reset the environment" in text:
+                banner("⏹ 上一回合结束。↻ 环境复位中（不录数据），请把积木放回起始位置")
+                last_marker = "reset"
+            elif "Stop recording" in text and last_marker != "stop":
+                banner("✅ 录制已结束，正在收尾保存…")
+                last_marker = "stop"
+
+    proc.wait()
+    if proc.returncode != 0:
+        print(f"[错误] 录制失败，退出码 {proc.returncode}")
+        return proc.returncode
     return 0
 
 
